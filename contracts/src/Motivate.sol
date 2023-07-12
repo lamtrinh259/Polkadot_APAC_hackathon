@@ -23,6 +23,7 @@ error AlreadyRecorded();
 
 struct Challenge {
     uint40 userCount;
+    address[] winners;
 }
 
 struct UserChallenge {
@@ -88,7 +89,7 @@ contract Motivate {
     }
 
     // function to check if all bools are true
-    function allBoolsTrue(address _user, uint256 _challengeId) public view returns (bool) {
+    function allBoolsTrue(address _user, uint256 _challengeId) internal view returns (bool) {
         Record storage record = activityRecords[_user][_challengeId];
 
         // if all 21 bools are true, then record.bitMask should be 0x1FFFFF (2^21 - 1)
@@ -111,6 +112,13 @@ contract Motivate {
             challengeBalances[challengeId] += userChallenges[msg.sender][challengeId].paymentPerDay;
         } else {
             revert AlreadyRecorded();
+        }
+
+        // On the last day of the challenge, check if the user finished all 21 days
+        if (day == 20) {
+            if (allBoolsTrue(msg.sender, challengeId)) {
+                challengeInfos[challengeId].winners.push(msg.sender);
+            }
         }
 
         SafeTransferLib.safeTransferFrom(MOONBEAM_USDC_ADDR, address(this), msg.sender, amount);
