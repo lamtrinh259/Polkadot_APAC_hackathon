@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.19 <=0.9.0;
 
-import { Foo } from "../src/Motivate.sol";
+import { Motivate } from "../src/Motivate.sol";
 
 import { BaseScript } from "./Base.s.sol";
 
