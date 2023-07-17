@@ -22,7 +22,7 @@ contract Motivate {
   struct Record {
     uint256 bitMask;
   }
-
+  // To be eligible for prize drawing: minimum requirements should be 70% or 14 days completed.
   struct Challenge {
     uint40 userCount;
     address[] winners;
@@ -38,6 +38,9 @@ contract Motivate {
   mapping(address user => mapping(uint256 challengeId => uint256 userBalance)) public userBalances;
   mapping(uint256 challengeId => uint256 balance) public challengeBalances;
   mapping(uint256 challengeId => Challenge challengeInfos) public challengeInfos;
+
+  // Instead of bitmask, can use 2 counters: 1 to keep track of winning streaks for users, and 1 keep track of
+  // the points for users
 
   function getCID(ChallengeId calldata challenge) internal view returns (uint256) {
     return uint256(keccak256(abi.encodePacked(challenge.activityId, challenge.startDate, challenge.duration)));
@@ -99,11 +102,10 @@ contract Motivate {
    * @dev May need to change the implementation of this function as it's not compiling
    */
   function allBoolsTrue(address _user, uint256 _challengeId) internal view returns (bool) {
-    // Record storage record = activityRecords[_user][_challengeId];
+    Record storage record = activityRecords[_user][_challengeId];
 
     // if all 21 bools are true, then record.bitMask should be 0x1FFFFF (2^21 - 1)
-    // return record.bitMask == 0x1FFFFF;
-    return true;
+    return record.bitMask == 0x1FFFFF;
   }
 
   function record(ChallengeId calldata challenge) external {
