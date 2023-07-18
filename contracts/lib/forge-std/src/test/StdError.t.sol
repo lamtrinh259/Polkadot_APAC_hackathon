@@ -1,8 +1,7 @@
-// SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+// SPDX-License-Identifier: Unlicense
+pragma solidity 0.8.10;
 
-import "../src/StdError.sol";
-import "../src/Test.sol";
+import "../Test.sol";
 
 contract StdErrorsTest is Test {
     ErrorsTest test;
@@ -60,10 +59,17 @@ contract StdErrorsTest is Test {
         vm.expectRevert(stdError.zeroVarError);
         test.intern();
     }
+
+    function testExpectLowLvl() public {
+        vm.expectRevert(stdError.lowLevelError);
+        test.someArr(0);
+    }
 }
 
 contract ErrorsTest {
-    enum T {T1}
+    enum T {
+        T1
+    }
 
     uint256[] public someArr;
     bytes someBytes;
@@ -89,7 +95,6 @@ contract ErrorsTest {
     }
 
     function encodeStgError() public {
-        /// @solidity memory-safe-assembly
         assembly {
             sstore(someBytes.slot, 1)
         }
@@ -106,7 +111,7 @@ contract ErrorsTest {
     }
 
     function mem() public pure {
-        uint256 l = 2 ** 256 / 32;
+        uint256 l = 2**256 / 32;
         new uint256[](l);
     }
 

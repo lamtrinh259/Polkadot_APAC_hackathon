@@ -1,26 +1,23 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19 <0.9.0;
+// SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.13;
 
-import { PRBTest } from "@prb/test/PRBTest.sol";
-import { console2 } from "forge-std/console2.sol";
-import { StdCheats } from "forge-std/StdCheats.sol";
+import "forge-std/Test.sol";
 
-import { Motivate } from "../src/Motivate.sol";
+import "src/Motivate.sol";
 
-interface IERC20 {
-    function balanceOf(address account) external view returns (uint256);
-}
+contract TestContract is Test {
+    Motivate c;
 
-/// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
-/// https://book.getfoundry.sh/forge/writing-tests
-contract MotivateTest is PRBTest, StdCheats {
-    Motivate internal m;
-
-    /// @dev A function invoked before each test case is run.
-    function setUp() public virtual {
-        // Instantiate the contract-under-test.
-        m = new Motivate();
+    function setUp() public {
+        c = new Motivate();
     }
 
+    function testBar() public {
+        assertEq(uint256(1), uint256(1), "ok");
+    }
 
+    function testFoo(uint256 x) public {
+        vm.assume(x < type(uint128).max);
+        assertEq(x + x, x * 2);
+    }
 }
