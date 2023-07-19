@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity >=0.8.13;
 
 import "forge-std/Test.sol";
 
-import "src/Motivate.sol";
+import "src/core/Motivate.sol";
 
 contract TestContract is Test {
     Motivate c;
