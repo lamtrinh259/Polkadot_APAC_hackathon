@@ -2,28 +2,38 @@
 pragma solidity >=0.8.13;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { MINIMUM_WAGER, MOONBEAM_USDC_ADDR, TREASURY_ADDR } from "../lib/Constants.sol";
-import { ChallengeIdentifiers, UserChallenge, ChallengeInfo, Record } from "../lib/Types.sol";
+import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { MINIMUM_WAGER, MOONBEAM_USDC_ADDR, TREASURY_ADDR, PRIZE_POOL_ADDR } from "../lib/Constants.sol";
+import { UserChallenge, ChallengeInfo, Record } from "../lib/Types.sol";
 import { Errors } from "../lib/Errors.sol";
 import { Modifiers } from "../modifiers/Motivate.sol";
 
-contract Motivate is Modifiers {
-    uint256 monthEnd;
+contract Motivate is Modifiers, Ownable {
+    using Counters for Counters.Counter;
+    Counters.Counter activityID;
+
+    uint256 private monthEnd;
     address[] public eligibleParticipants;
   mapping(address => mapping(uint256 => UserChallenge)) public userChallenges;
   mapping(address => uint256) public userBalances;
   mapping(uint256 => ChallengeInfo) public challengesByID;
   mapping(address => mapping(uint256 => Record)) private activityRecords;
 
+    constructor () {
+        activityID.increment();
+    }
+
     function start(
-        ChallengeIdentifiers calldata cids, 
+        uint256 startDate, 
         uint256 amount
     ) 
         external 
-        dateMustExceedNow(cids)
+        dateMustExceedNow(startDate)
         amountMustExceedMinWager(amount) 
     {
-        uint256 challengeID = generateChanllengeIdentifier(cids);
+        uint256 currentId = activityID.current();
+        uint256 challengeID = generateChallengeIdentifier(startDate, currentId, amount);
         if (userChallenges[msg.sender][challengeID].challengeAccepted) {
             revert Errors.DuplicateChallenger();
         }
@@ -40,18 +50,17 @@ contract Motivate is Modifiers {
     }
 
     function recordChallenge(
-        ChallengeIdentifiers calldata cids
+        uint256 challengeID
     ) 
         external 
-        challengeMustHaveStarted(cids)
-        dateMustExceedNow(cids) 
     {
-        uint256 challengeID = generateChanllengeIdentifier(cids);
+        UserChallenge memory userChallenge = userChallenges[msg.sender][challengeID];
         ChallengeInfo storage challenge = challengesByID[challengeID];
+        if (userChallenge.startDate > block.timestamp) revert Errors.ChallengeNotStarted();
         uint256 balanceToPoolPrize = (challenge.balance * (1 ether / 2)) / 1 ether;
-        uint256 paymentPerDay = userChallenges[msg.sender][challengeID].paymentPerDay;
+        uint256 paymentPerDay = userChallenge.paymentPerDay;
 
-        uint8 day = _whichDay(cids.startDate);
+        uint8 day = _whichDay(userChallenge.startDate);
         bool recordSet = setRecord(msg.sender, challengeID, day);
 
         if (recordSet) {
@@ -70,8 +79,11 @@ contract Motivate is Modifiers {
             }
         }
 
+        challenge.amountEarned += balanceToPoolPrize;
         challengesByID[challengeID] = challenge;
-        bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(address(this), msg.sender, balanceToPoolPrize);
+        // keep track of the streak and how much they've earned
+        /// This should update the challenge info for user and id
+        // bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(address(this), msg.sender, balanceToPoolPrize);
     }
 
     // function sweep(ChallengeId calldata challenge) external {
@@ -90,22 +102,37 @@ contract Motivate is Modifiers {
     //     SafeTransferLib.safeTransfer(MOONBEAM_USDC_ADDR, TREASURY_ADDR, balanceToTreasury);
     // }
 
+    /// Withdraw    
+
+    function adminRecordFailedChallenge(address user, uint256 challengeID) external onlyOwner {
+        UserChallenge memory challenge = userChallenges[user][challengeID];
+        Record memory userRecord = activityRecords[user][challengeID];
+        uint256 today = _whichDay(challenge.startDate);
+
+        if (userRecord.challengeDays[today] == true) revert Errors.UserAlreadyRecordedChallenge();        
+        /// Split paymentPerDay into 2. Half to treasury and half to prizePool
+        IERC20(MOONBEAM_USDC_ADDR).transfer(TREASURY_ADDR, challenge.paymentPerDay * 50 / 100);
+        IERC20(MOONBEAM_USDC_ADDR).transfer(PRIZE_POOL_ADDR, challenge.paymentPerDay * 50 / 100);
+    }
+
     function setMonthEnd(uint256 stamp) external {
+        require(stamp > block.timestamp, "Month end cannot be set to today.");
         monthEnd = stamp;
     }
 
-    function generateChanllengeIdentifier(ChallengeIdentifiers calldata challenge) internal view returns(uint256) {
+    function generateChallengeIdentifier(uint256 startDate, uint256 activityId, uint256 amount) internal pure returns(uint256) {
         return uint256(
             keccak256(
                 abi.encodePacked(
-                    challenge.activityId, 
-                    challenge.startDate
+                        activityId, 
+                        startDate,
+                        amount
                     )
                 )
             );
     }
 
-    function _whichDay(uint40 _startTimestamp) internal returns (uint8) {
+    function _whichDay(uint256 _startTimestamp) internal view returns (uint8) {
         uint256 day = (block.timestamp % _startTimestamp) / 1 days;
         return uint8(day);
     }
@@ -128,9 +155,15 @@ contract Motivate is Modifiers {
    */
   function allBoolsTrue(address _user, uint256 _challengeId) internal view returns (bool) {
     Record storage record = activityRecords[_user][_challengeId];
+    bool hasFailedDay = false;
 
     // if all 21 bools are true, then record.bitMask should be 0x1FFFFF (2^21 - 1)
-    return true;
+    for (uint256 i = 0; i < record.challengeDays.length; i++) {
+        if (record.challengeDays[i] == false) {
+            hasFailedDay = true;
+        }
+    }
+    return hasFailedDay;
   }
 
   function getUserCount() internal view {

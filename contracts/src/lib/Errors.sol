@@ -17,4 +17,7 @@ library Errors {
 
     /// @notice error thrown when there is an already recorded challenge for the day (timestamp)
     error AlreadyRecorded();
+
+    /// @notice error for when admin tries to set record that user already set
+    error UserAlreadyRecordedChallenge();
 }

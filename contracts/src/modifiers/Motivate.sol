@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-import { ChallengeIdentifiers } from "../lib/Types.sol";
 import { MINIMUM_WAGER } from "../lib/Constants.sol";
 import { Errors } from "../lib/Errors.sol";
 
@@ -13,15 +12,15 @@ abstract contract Modifiers {
         _;
     }
 
-    modifier dateMustExceedNow(ChallengeIdentifiers calldata cids) {
-        if (cids.startDate < block.timestamp) {
+    modifier dateMustExceedNow(uint256 startDate) {
+        if (startDate < block.timestamp) {
             revert Errors.ChallengeExpired();
         }
         _;
     }
 
-    modifier challengeMustHaveStarted(ChallengeIdentifiers calldata cids) {
-        if (cids.startDate > block.timestamp) {
+    modifier challengeMustHaveStarted(uint256 startDate) {
+        if (startDate > block.timestamp) {
             revert Errors.ChallengeNotStarted();
         }
         _;
