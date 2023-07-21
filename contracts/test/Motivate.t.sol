@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.13;
 
-import "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 
-import "src/core/Motivate.sol";
+import { console } from "forge-std/console.sol";
+import { SetupMotivate } from "./setup/SetupMotivate.t.sol";
 
-contract TestContract is Test {
-    Motivate c;
-
-    function setUp() public {
-        c = new Motivate();
+contract Motivate is SetupMotivate {
+    function setUp() public virtual override  {
+        SetupMotivate.setUp();
+        console.log("Test contract is setup: Motivate");
     }
 
-    function testBar() public {
-        assertEq(uint256(1), uint256(1), "ok");
+    function testInitialize() public {
+        // console.log("Initialize tests here, {}", motivate);
+        assertEq(Motivate(motivate.monthEnd), uint256(1), "ok");
     }
 
-    function testFoo(uint256 x) public {
-        vm.assume(x < type(uint128).max);
-        assertEq(x + x, x * 2);
-    }
+    // function testFoo(uint256 x) public {
+    //     vm.assume(x < type(uint128).max);
+    //     assertEq(x + x, x * 2);
+    // }
 }

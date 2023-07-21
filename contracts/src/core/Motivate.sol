@@ -11,9 +11,9 @@ import { Modifiers } from "../modifiers/Motivate.sol";
 
 contract Motivate is Modifiers, Ownable {
     using Counters for Counters.Counter;
-    Counters.Counter activityID;
+    Counters.Counter public activityID;
 
-    uint256 private monthEnd;
+    uint256 public monthEnd;
     address[] public eligibleParticipants;
   mapping(address => mapping(uint256 => UserChallenge)) public userChallenges;
   mapping(address => uint256) public userBalances;
@@ -38,15 +38,21 @@ contract Motivate is Modifiers, Ownable {
             revert Errors.DuplicateChallenger();
         }
 
-        UserChallenge memory userChallenge;
-        userChallenge.challengeAccepted = true;
-        userChallenge.paymentPerDay = amount / 21;
+        /// @notice create the user's challenge
+        UserChallenge memory userChallenge = UserChallenge({
+            challengeAccepted: true,
+            paymentPerDay: amount / 21,
+            challengeID: challengeID,
+            startDate: startDate,
+            amountPaid: amount
+        });
 
         userChallenges[msg.sender][challengeID] = userChallenge;
         userBalances[msg.sender] += amount;
 
         bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(msg.sender, address(this), amount);
         require(success, "Transfer Failed!");
+        activityID.increment();
     }
 
     function recordChallenge(
@@ -86,7 +92,7 @@ contract Motivate is Modifiers, Ownable {
         // bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(address(this), msg.sender, balanceToPoolPrize);
     }
 
-    // function sweep(ChallengeId calldata challenge) external {
+    // function sweep(uint256 challengeId) external {
     //     if ((challenge.startDate + 21 days) > block.timestamp) {
     //         revert ChallengeOngoing();
     //     }
