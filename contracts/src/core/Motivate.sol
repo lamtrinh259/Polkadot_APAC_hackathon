@@ -3,25 +3,69 @@ pragma solidity ^0.8.18;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { MINIMUM_WAGER, MOONBEAM_USDC_ADDR, TREASURY_ADDR, PRIZE_POOL_ADDR } from "../lib/Constants.sol";
-import { UserChallenge, ChallengeInfo, Record } from "../lib/Types.sol";
-import { Errors } from "../lib/Errors.sol";
+// import { MINIMUM_WAGER, MOONBEAM_USDC_ADDR, TREASURY_ADDR, PRIZE_POOL_ADDR } from "../lib/Constants.sol";
+// import { UserChallenge, ChallengeInfo, Record } from "../lib/Types.sol";
+// import { Errors } from "../lib/Errors.sol";
 import { Modifiers } from "../modifiers/Motivate.sol";
 
 contract Motivate is Modifiers, Ownable {
-    uint256 private activityID;
-    uint256 public monthEnd;
-    address[] public eligibleParticipants;
+    /// @notice error thrown when there is a duplicate challenge.
+    /// @dev duplictae challenge is a challenge with the same ID from a single User
+    error DuplicateChallenger();
+
+    /// @notice error thrown when there is an already recorded challenge for the day (timestamp)
+    error AlreadyRecorded();
+
+    /// @notice error for when admin tries to set record that user already set
+    error UserAlreadyRecordedChallenge();
+
+    struct UserChallenge {
+        bool challengeAccepted; // did the user accept this challenge?
+        uint256 amountPaid;
+        uint256 challengeID;
+        uint256 startDate;
+        uint256 paymentPerDay; // 1/21 of the user's wager
+        uint8 currentStreak;   // current checked-in streak of the user
+        uint256 amountOwed;    // amount owed to the user after every checked-in day
+    }
+
+    struct ChallengeInfo {
+        uint256 balance;
+        uint256 amountEarned;
+        address[] winners;
+    }
+
+    struct Record {
+        bool[21] challengeDays;
+    }
+
+    uint40 private constant CHALLENGE_DURATION = 21 days;
+    uint40 private constant CHALLENGE_CHECKIN_RATE = 1 days;
+    uint256 private constant MINIMUM_WAGER = 5_000_000; // 5 USDC
+    // Might need to deploy a mock USDC token
+    address private constant MOONBEAM_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // This is USDC address on Moonbeam mainnet
+    // Mock temporary treasury EVM address below, will be replaced with real treasury address after deployed
+    address private constant TREASURY_ADDR = 0x7B79079271A010E28b73d1F88c84C6720E2EF903;
+    // mock temporary prize pool address
+    address private constant PRIZE_POOL_ADDR = 0xeD90B79f66830699E8D411Ebc5F99017B65b56B1;
+    address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha testnet
+
+    uint256 private activityID; // counter for activity ID
+    uint256 public monthEnd; // hold the UNIX timestamp for the end of the month
+    address payable[] private eligibleParticipants;
+    address payable[] private winners;
     mapping(address => mapping(uint256 => UserChallenge)) public userChallenges;
     mapping(address => uint256) public userBalances;
     mapping(uint256 => ChallengeInfo) public challengesByID;
     mapping(address => mapping(uint256 => Record)) private activityRecords;
 
+    event StartedChallenge(address indexed user, uint256 indexed challengeID, uint256 amount);
+
     constructor() Ownable(msg.sender) {
         activityID = 1;  // activity ID = 1 when first initiated
     }
 
-    function start(
+    function startChallenge(
         uint256 startDate,
         uint256 amount
     )
@@ -32,7 +76,7 @@ contract Motivate is Modifiers, Ownable {
         uint256 currentId = activityID;
         uint256 challengeID = generateChallengeIdentifier(startDate, currentId, amount);
         if (userChallenges[msg.sender][challengeID].challengeAccepted) {
-            revert Errors.DuplicateChallenger();
+            revert DuplicateChallenger();
         }
 
         /// @notice create the user's challenge
@@ -41,11 +85,15 @@ contract Motivate is Modifiers, Ownable {
             paymentPerDay: amount / 21,
             challengeID: challengeID,
             startDate: startDate,
-            amountPaid: amount
+            amountPaid: amount,
+            currentStreak: 0,
+            amountOwed: 0
         });
 
         userChallenges[msg.sender][challengeID] = userChallenge;
         userBalances[msg.sender] += amount;
+
+        emit StartedChallenge(msg.sender, challengeID, amount);
 
         bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(msg.sender, address(this), amount);
         require(success, "Transfer Failed!");
@@ -55,7 +103,7 @@ contract Motivate is Modifiers, Ownable {
     function recordChallenge(uint256 challengeID) external {
         UserChallenge memory userChallenge = userChallenges[msg.sender][challengeID];
         ChallengeInfo storage challenge = challengesByID[challengeID];
-        if (userChallenge.startDate > block.timestamp) revert Errors.ChallengeNotStarted();
+        if (userChallenge.startDate > block.timestamp) revert ChallengeNotStarted();
         uint256 balanceToPoolPrize = (challenge.balance * (1 ether / 2)) / 1 ether;
         uint256 paymentPerDay = userChallenge.paymentPerDay;
 
@@ -64,23 +112,23 @@ contract Motivate is Modifiers, Ownable {
 
         if (recordSet) {
             challenge.balance += paymentPerDay;
-            // Update record for the current day
+            userChallenge.currentStreak++;
+            userChallenge.amountOwed += paymentPerDay;
+            // Update record for the current day to be true
             activityRecords[msg.sender][challengeID].challengeDays[day] = true;
         } else {
-            revert Errors.AlreadyRecorded();
+            revert AlreadyRecorded();
         }
 
-        if (day == 20) {
+        if (day == 20 && userChallenge.currentStreak == 14) {
             if (allBoolsTrue(msg.sender, challengeID)) {
-                challenge.winners.push(msg.sender);
-                /// push into an array of eligible winners
-                eligibleParticipants.push(msg.sender);
+                /// push into an array of eligible participants
+                eligibleParticipants.push(payable(msg.sender));
             }
         }
 
         challenge.amountEarned += balanceToPoolPrize;
         challengesByID[challengeID] = challenge;
-        // keep track of the streak and how much they've earned
         /// This should update the challenge info for user and id
         // bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(address(this), msg.sender, balanceToPoolPrize);
     }
@@ -103,12 +151,16 @@ contract Motivate is Modifiers, Ownable {
 
     /// Withdraw
 
+    function withdrawAtEndOfChallenge(address user, uint256 challengeID) public {
+
+    }
+
     function adminRecordFailedChallenge(address user, uint256 challengeID) external onlyOwner {
         UserChallenge memory challenge = userChallenges[user][challengeID];
         Record memory userRecord = activityRecords[user][challengeID];
         uint256 today = _whichDay(challenge.startDate);
 
-        if (userRecord.challengeDays[today] == true) revert Errors.UserAlreadyRecordedChallenge();
+        if (userRecord.challengeDays[today] == true) revert UserAlreadyRecordedChallenge();
         /// Split paymentPerDay into 2. Half to treasury and half to prizePool
         IERC20(MOONBEAM_USDC_ADDR).transfer(TREASURY_ADDR, challenge.paymentPerDay * 50 / 100);
         IERC20(MOONBEAM_USDC_ADDR).transfer(PRIZE_POOL_ADDR, challenge.paymentPerDay * 50 / 100);
