@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 contract DIARandomOracle {
 
-  struct Random { 
+  struct Random {
     string randomness;
     string signature;
     string previousSignature;
