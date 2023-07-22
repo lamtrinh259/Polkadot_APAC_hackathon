@@ -10,9 +10,6 @@ import { CreateNewChallengeComponent } from './create-new-challenge/create-new-c
 import { ChallengeConfirmationComponent } from './challenge-confirmation/challenge-confirmation.component';
 import { CongratsOnCheckinComponent } from './congrats-on-checkin/congrats-on-checkin.component';
 import { CongratsOnTakingfirststepComponent } from './congrats-on-takingfirststep/congrats-on-takingfirststep.component';
-import { BalancesComponent } from './balances/balances.component';
-import { SigninComponent } from './signin/signin.component';
-import { UserComponent } from './user/user.component';
 
 const routes: Routes = [
   {
@@ -39,21 +36,6 @@ const routes: Routes = [
   {
     path: 'create',
     component: CreateNewChallengeComponent,
-  },
-
-  { 
-    path: 'signin', 
-  component: SigninComponent 
-  },
-
-  { 
-    path: 'balances', 
-  component: BalancesComponent 
-  },
-
-  { 
-    path: 'user', 
-  component: UserComponent 
   }
 
 ];
@@ -69,10 +51,8 @@ const routes: Routes = [
     CreateNewChallengeComponent,
     ChallengeConfirmationComponent,
     CongratsOnCheckinComponent,
-    CongratsOnTakingfirststepComponent,
-    BalancesComponent,
-    SigninComponent,
-    UserComponent
+    CongratsOnTakingfirststepComponent
+
   ],
   imports: [
     CommonModule, RouterModule.forChild(routes)
