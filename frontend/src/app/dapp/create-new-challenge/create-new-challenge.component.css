@@ -17,19 +17,6 @@
     padding-top: 60px;
 }
 
-.nav-addition{
-    position:relative;
-    top: -78px;
-    left: 1100px;
-    width: 80px;
-}
-
-.nav-addition:hover{
-    color: red;
-    background-color: #165e64;
-
-}
-
 .first-paragraph {
     text-align: center;
     padding-bottom: 20px;

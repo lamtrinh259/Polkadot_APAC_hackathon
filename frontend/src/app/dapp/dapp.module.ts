@@ -10,13 +10,15 @@ import { CreateNewChallengeComponent } from './create-new-challenge/create-new-c
 import { ChallengeConfirmationComponent } from './challenge-confirmation/challenge-confirmation.component';
 import { CongratsOnCheckinComponent } from './congrats-on-checkin/congrats-on-checkin.component';
 import { CongratsOnTakingfirststepComponent } from './congrats-on-takingfirststep/congrats-on-takingfirststep.component';
+import { BalancesComponent } from './balances/balances.component';
+import { SigninComponent } from './signin/signin.component';
+import { UserComponent } from './user/user.component';
 
 const routes: Routes = [
   {
     path: '',
     component: DappMainPageComponent,
   },
-
   {
     path: 'wallet',
     component: ModalWalletComponent,
@@ -39,6 +41,21 @@ const routes: Routes = [
     component: CreateNewChallengeComponent,
   },
 
+  { 
+    path: 'signin', 
+  component: SigninComponent 
+  },
+
+  { 
+    path: 'balances', 
+  component: BalancesComponent 
+  },
+
+  { 
+    path: 'user', 
+  component: UserComponent 
+  }
+
 ];
 
 
@@ -52,7 +69,10 @@ const routes: Routes = [
     CreateNewChallengeComponent,
     ChallengeConfirmationComponent,
     CongratsOnCheckinComponent,
-    CongratsOnTakingfirststepComponent
+    CongratsOnTakingfirststepComponent,
+    BalancesComponent,
+    SigninComponent,
+    UserComponent
   ],
   imports: [
     CommonModule, RouterModule.forChild(routes)

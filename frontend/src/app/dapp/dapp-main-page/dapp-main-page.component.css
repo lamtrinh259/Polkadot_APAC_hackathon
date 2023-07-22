@@ -10,7 +10,7 @@
  .content{
     background-color: white;
     border-radius: 10px;
-    height: 700px;
+    height: 1200px;
     width: 90%;
     margin: auto;
     overflow: hidden;
@@ -22,14 +22,20 @@
     padding-bottom: 20px;;
 }
 
-/* .images{
-    float:left;
-    display: flex;
-    /* margin-right: 50px; */
-    /* text-align: center; */
-    /* margin: auto;} */
- 
 
-/* .imgone{
-    padding-right: 40px;;
-} */
+.connect{
+    position:relative;
+    top: -75px;
+    left: 1000px;
+    width: 200px;
+    height: 75px;
+    color: white;
+
+}
+
+.connect:hover{
+    color: red;
+    background-color: #165e64;
+    cursor: pointer;
+
+}
