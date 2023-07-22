@@ -14,7 +14,7 @@
   optimizer_runs = 200
   out = "out"
   script = "script"
-  solc = "0.8.13"
+  solc = "0.8.19" # This is the compiler version, must be 0.8.19 minimum to work with OpenZeppelin
   src = "src"
   test = "test"
 
@@ -55,5 +55,3 @@
   polygon = "https://polygon-mainnet.infura.io/v3/${API_KEY_INFURA}"
   sepolia = "https://sepolia.infura.io/v3/${API_KEY_INFURA}"
   mumbai = "https://rpc.ankr.com/polygon_mumbai"
-
-

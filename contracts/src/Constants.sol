@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.19;
+pragma solidity ^0.8.19;
 
 uint40 constant CHALLENGE_DURATION = 21 days;
 uint40 constant CHALLENGE_CHECKIN_RATE = 1 days;

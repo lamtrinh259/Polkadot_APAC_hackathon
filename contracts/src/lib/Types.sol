@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.13;
+pragma solidity ^0.8.18;
 
 struct UserChallenge {
     bool challengeAccepted; // did the user accept this challenge?
