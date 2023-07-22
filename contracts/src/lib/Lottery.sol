@@ -34,8 +34,10 @@ contract Lottery {
             num_winners = 1;
             winners.push(participants[0]);
         } else if (participants.length == 2) {
+            num_winners = 1;
+        } else if (participants.length == 3) {
             num_winners = 2;
-        } else {
+        }else {
             num_winners = 3;
         }
 
