@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.13;
+pragma solidity ^0.8.18;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { MINIMUM_WAGER, MOONBEAM_USDC_ADDR, TREASURY_ADDR, PRIZE_POOL_ADDR } from "../lib/Constants.sol";
 import { UserChallenge, ChallengeInfo, Record } from "../lib/Types.sol";
@@ -10,29 +9,27 @@ import { Errors } from "../lib/Errors.sol";
 import { Modifiers } from "../modifiers/Motivate.sol";
 
 contract Motivate is Modifiers, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter public activityID;
-
+    uint256 private activityID;
     uint256 public monthEnd;
     address[] public eligibleParticipants;
-  mapping(address => mapping(uint256 => UserChallenge)) public userChallenges;
-  mapping(address => uint256) public userBalances;
-  mapping(uint256 => ChallengeInfo) public challengesByID;
-  mapping(address => mapping(uint256 => Record)) private activityRecords;
+    mapping(address => mapping(uint256 => UserChallenge)) public userChallenges;
+    mapping(address => uint256) public userBalances;
+    mapping(uint256 => ChallengeInfo) public challengesByID;
+    mapping(address => mapping(uint256 => Record)) private activityRecords;
 
-    constructor () {
-        activityID.increment();
+    constructor() Ownable(msg.sender) {
+        activityID = 1;  // activity ID = 1 when first initiated
     }
 
     function start(
-        uint256 startDate, 
+        uint256 startDate,
         uint256 amount
-    ) 
-        external 
+    )
+        external
         dateMustExceedNow(startDate)
-        amountMustExceedMinWager(amount) 
+        amountMustExceedMinWager(amount)
     {
-        uint256 currentId = activityID.current();
+        uint256 currentId = activityID;
         uint256 challengeID = generateChallengeIdentifier(startDate, currentId, amount);
         if (userChallenges[msg.sender][challengeID].challengeAccepted) {
             revert Errors.DuplicateChallenger();
@@ -52,14 +49,10 @@ contract Motivate is Modifiers, Ownable {
 
         bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(msg.sender, address(this), amount);
         require(success, "Transfer Failed!");
-        activityID.increment();
+        activityID+=1; // increase the activity ID after a challenge is created
     }
 
-    function recordChallenge(
-        uint256 challengeID
-    ) 
-        external 
-    {
+    function recordChallenge(uint256 challengeID) external {
         UserChallenge memory userChallenge = userChallenges[msg.sender][challengeID];
         ChallengeInfo storage challenge = challengesByID[challengeID];
         if (userChallenge.startDate > block.timestamp) revert Errors.ChallengeNotStarted();
@@ -99,7 +92,7 @@ contract Motivate is Modifiers, Ownable {
 
     //     for (uint i=0; i < counter; i++) {
     //         currentValue = addressToValue[countToAddress[i]];
-    //     } 
+    //     }
 
     //     uint256 challengeId = getCID(challenge);
 
@@ -108,34 +101,34 @@ contract Motivate is Modifiers, Ownable {
     //     SafeTransferLib.safeTransfer(MOONBEAM_USDC_ADDR, TREASURY_ADDR, balanceToTreasury);
     // }
 
-    /// Withdraw    
+    /// Withdraw
 
     function adminRecordFailedChallenge(address user, uint256 challengeID) external onlyOwner {
         UserChallenge memory challenge = userChallenges[user][challengeID];
         Record memory userRecord = activityRecords[user][challengeID];
         uint256 today = _whichDay(challenge.startDate);
 
-        if (userRecord.challengeDays[today] == true) revert Errors.UserAlreadyRecordedChallenge();        
+        if (userRecord.challengeDays[today] == true) revert Errors.UserAlreadyRecordedChallenge();
         /// Split paymentPerDay into 2. Half to treasury and half to prizePool
         IERC20(MOONBEAM_USDC_ADDR).transfer(TREASURY_ADDR, challenge.paymentPerDay * 50 / 100);
         IERC20(MOONBEAM_USDC_ADDR).transfer(PRIZE_POOL_ADDR, challenge.paymentPerDay * 50 / 100);
     }
 
-    function setMonthEnd(uint256 stamp) external {
-        require(stamp > block.timestamp, "Month end cannot be set to today.");
+    function setMonthEnd(uint256 stamp) external onlyOwner {
+        require(stamp > block.timestamp, "Month end must be greater than current timestamp");
         monthEnd = stamp;
     }
 
-    function generateChallengeIdentifier(uint256 startDate, uint256 activityId, uint256 amount) internal pure returns(uint256) {
-        return uint256(
-            keccak256(
-                abi.encodePacked(
-                        activityId, 
-                        startDate,
-                        amount
-                    )
-                )
-            );
+    function generateChallengeIdentifier(
+        uint256 startDate,
+        uint256 activityId,
+        uint256 amount
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return uint256(keccak256(abi.encodePacked(activityId, startDate, amount)));
     }
 
     function _whichDay(uint256 _startTimestamp) internal view returns (uint8) {
@@ -156,23 +149,21 @@ contract Motivate is Modifiers, Ownable {
     }
 
     /**
-   * @notice function to check if all bools are true
-   * @dev May need to change the implementation of this function as it's not compiling
-   */
-  function allBoolsTrue(address _user, uint256 _challengeId) internal view returns (bool) {
-    Record storage record = activityRecords[_user][_challengeId];
-    bool hasFailedDay = false;
+     * @notice function to check if all bools are true
+     * @dev May need to change the implementation of this function as it's not compiling
+     */
+    function allBoolsTrue(address _user, uint256 _challengeId) internal view returns (bool) {
+        Record storage record = activityRecords[_user][_challengeId];
+        bool hasFailedDay = false;
 
-    // if all 21 bools are true, then record.bitMask should be 0x1FFFFF (2^21 - 1)
-    for (uint256 i = 0; i < record.challengeDays.length; i++) {
-        if (record.challengeDays[i] == false) {
-            hasFailedDay = true;
+        // if all 21 bools are true, then record.bitMask should be 0x1FFFFF (2^21 - 1)
+        for (uint256 i = 0; i < record.challengeDays.length; i++) {
+            if (record.challengeDays[i] == false) {
+                hasFailedDay = true;
+            }
         }
+        return hasFailedDay;
     }
-    return hasFailedDay;
-  }
 
-  function getUserCount() internal view {
-    
-  }
+    function getUserCount() internal view { }
 }

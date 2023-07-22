@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.13;
+pragma solidity ^0.8.18;
 
 import "forge-std/Test.sol";
 
@@ -12,7 +12,7 @@ contract SetupMotivate is Test {
     using Address for address;
 
     address payable[] internal users;
-    Motivate  internal motivate;
+    Motivate internal motivate;
     Helpers internal helpers;
 
     address internal admin;
