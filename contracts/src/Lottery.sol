@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
-  
+
 
 import "./DIARandomOracle.sol";
 
@@ -10,7 +10,7 @@ contract Lottery {
 
   address[] public participants;
   address[] public winners;
-  
+
   constructor(address oracle, address[] memory _participants) {
     randomOracle = oracle;      //Oracle address : 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec (also in constants.sol)
     participants = _participants;
