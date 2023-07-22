@@ -6,9 +6,10 @@ import { RouterModule, Routes } from '@angular/router';
 import { LeaderboardComponent } from './leaderboard/leaderboard.component';
 import { ModalWalletComponent } from './modal-wallet/modal-wallet.component';
 import { WelcomeComponent } from './welcome/welcome.component';
-import { CongratulationsComponent } from './congratulations/congratulations.component';
 import { CreateNewChallengeComponent } from './create-new-challenge/create-new-challenge.component';
 import { ChallengeConfirmationComponent } from './challenge-confirmation/challenge-confirmation.component';
+import { CongratsOnCheckinComponent } from './congrats-on-checkin/congrats-on-checkin.component';
+import { CongratsOnTakingfirststepComponent } from './congrats-on-takingfirststep/congrats-on-takingfirststep.component';
 
 const routes: Routes = [
   {
@@ -19,7 +20,25 @@ const routes: Routes = [
   {
     path: 'wallet',
     component: ModalWalletComponent,
-  }
+  },
+
+  {
+    path: 'welcome',
+    component: WelcomeComponent,
+  },
+  {
+    path: 'congrats-on-checkin',
+    component: CongratsOnCheckinComponent,
+  },
+  {
+    path: 'congrats-on-takingfirststep',
+    component: CongratsOnTakingfirststepComponent,
+  },
+  {
+    path: 'create',
+    component: CreateNewChallengeComponent,
+  },
+
 ];
 
 
@@ -30,9 +49,10 @@ const routes: Routes = [
     LeaderboardComponent,
     ModalWalletComponent,
     WelcomeComponent,
-    CongratulationsComponent,
     CreateNewChallengeComponent,
-    ChallengeConfirmationComponent
+    ChallengeConfirmationComponent,
+    CongratsOnCheckinComponent,
+    CongratsOnTakingfirststepComponent
   ],
   imports: [
     CommonModule, RouterModule.forChild(routes)
