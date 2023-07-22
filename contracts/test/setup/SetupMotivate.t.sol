@@ -25,6 +25,6 @@ contract SetupMotivate is Test {
         vm.label(admin, "Admin");
 
         motivate = new Motivate();
-        console.log("SetupMotivate Run", motivate.monthEnd);
+        // console.log("SetupMotivate Run", motivate.monthEnd);
     }
 }
