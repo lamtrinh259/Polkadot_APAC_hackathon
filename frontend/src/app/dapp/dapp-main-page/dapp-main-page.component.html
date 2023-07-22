@@ -28,26 +28,17 @@
 
 <div class="pt-10 grid grid-cols-2 text-center">
     <div class="flex items-center justify-center">
-        <!-- <img
-        src="https://st.depositphotos.com/60692670/57535/i/600/depositphotos_575356850-stock-photo-ukraine-odessa-october-2021-hand.jpg"
-        class="max-w-sm rounded border bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800"
-        alt="check-in" />    
-        <br> -->
         <br>
         <br>
-        <button class="w-3/5 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">
+        <button (click)="gotTo('dapp/welcome')" class="w-3/5 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">
             Daily Check-in
           </button>
     </div>
     <div class="flex items-center justify-center">
-        <!-- <img
-        src="https://tecdn.b-cdn.net/img/new/standard/city/041.jpg"
-        class="max-w-sm rounded border bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800"
-        alt="habit" />   -->
         <br>
         <br>
 
-        <button class="w-3/5 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">
+        <button (click)="gotTo('dapp/create')" class="w-3/5 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">
             Pledge to form a new habit
           </button>
     </div>
