@@ -12,3 +12,5 @@ address constant TREASURY_ADDR = 0x7B79079271A010E28b73d1F88c84C6720E2EF903;
 
 // mock temporary prize pool address
 address constant PRIZE_POOL_ADDR = 0xeD90B79f66830699E8D411Ebc5F99017B65b56B1;
+
+address constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec;
