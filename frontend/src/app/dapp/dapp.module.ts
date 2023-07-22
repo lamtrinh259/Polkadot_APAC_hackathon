@@ -16,7 +16,6 @@ const routes: Routes = [
     path: '',
     component: DappMainPageComponent,
   },
-
   {
     path: 'wallet',
     component: ModalWalletComponent,
@@ -37,7 +36,7 @@ const routes: Routes = [
   {
     path: 'create',
     component: CreateNewChallengeComponent,
-  },
+  }
 
 ];
 
@@ -53,6 +52,7 @@ const routes: Routes = [
     ChallengeConfirmationComponent,
     CongratsOnCheckinComponent,
     CongratsOnTakingfirststepComponent
+
   ],
   imports: [
     CommonModule, RouterModule.forChild(routes)

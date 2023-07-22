@@ -1,10 +1,11 @@
-<app-nav-dapp></app-nav-dapp>
+<app-nav-dapp>
+    <p class="connect" (click)="connectToWallet()">Connect Wallet</p>
+</app-nav-dapp>
 
 <div class="content">
   <br><br>
   <p class="font-bold text-2xl first-paragraph">Please make your selection to improve yourself.</p>
   <br>
-  
 <div class="pt-5 grid grid-cols-2 gap-0">
     <div class="flex items-center justify-center">
         <a href="#">
@@ -43,5 +44,20 @@
           </button>
     </div>
 </div> 
- 
+
+<div class="flex justify-around items-center h-[100vh] w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+    <div class="flex justify-around flex-col items-center">
+      <h1 class="text-[3em] font-bold" *ngIf="!walletConnected">Connect Ethereum Wallet</h1>
+      <h1 class="text-[3em] font-bold" *ngIf="walletConnected">Connected Ethereum Wallet</h1>
+      <button 
+      *ngIf="!walletConnected"
+      class="bg-gradient-to-r from-green-500 to-blue-500 text-white w-[200px] p-4 rounded-full mt-4"
+      (click)="connectToWallet()"
+      >Connect Wallet</button>
+  
+      <div *ngIf="walletConnected" class="bg-gradient-to-r from-green-500 to-blue-500 p-[2em] rounded-xl">
+        <label class="text-white">{{walletId}}</label>
+      </div>
+    </div>
+  </div>
 </div>

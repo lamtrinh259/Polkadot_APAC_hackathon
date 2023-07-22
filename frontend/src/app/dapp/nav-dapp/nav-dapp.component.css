@@ -50,6 +50,7 @@ nav ul li.launch{
 
 nav ul li a:hover{
     color: yellow;
+    cursor: pointer;
 }
 
 nav ul li:hover{

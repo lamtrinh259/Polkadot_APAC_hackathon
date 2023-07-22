@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { WalletService } from 'src/app/services/wallet.service';
 
 @Component({
   selector: 'app-dapp-main-page',
@@ -8,12 +9,29 @@ import { Router } from '@angular/router';
 })
 export class DappMainPageComponent implements OnInit {
 
-  constructor(private router: Router) { }
-
-  ngOnInit(): void {
-  }
+  constructor(
+    private router: Router,
+    private walletService: WalletService) { }
 
   gotTo(route: string) {
     this.router.navigate([route])
+  }
+
+  public walletConnected: boolean = false;
+  public walletId: string = '';
+
+  connectToWallet  = () => {
+    this.walletService.connectWallet();
+  }
+
+  checkWalletConnected = async () => {
+    const accounts = await this.walletService.checkWalletConnected();
+    if(accounts.length > 0){
+      this.walletConnected = true;
+      this.walletId = accounts[0];
+    }
+  }
+  ngOnInit(): void {
+    this.checkWalletConnected();
   }
 }
