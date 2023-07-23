@@ -82,12 +82,11 @@ contract Motivate is Modifiers, Ownable {
         uint256 amount // This is the user's pledge amount in USDC
     )
         external
-        payable
         dateMustExceedNow(startDate)
     {
-        if (msg.value < s_minimumDeposit) {
-            revert Motivate_NotEnoughDepositAmount();
-        }
+        // if (msg.value < s_minimumDeposit) {
+        //     revert Motivate_NotEnoughDepositAmount();
+        // }
         uint256 currentId = activityID;
         uint256 challengeID = generateChallengeIdentifier(startDate, currentId, amount);
         if (userChallenges[msg.sender][challengeID].challengeAccepted) {
@@ -279,6 +278,13 @@ contract Motivate is Modifiers, Ownable {
             }
         }
         return uint8((numberOfMonths + currentMonth) % 4);
+    }
+
+    // Function to approve the contract to spend the user's USDC on their behalf
+    function approveUSDC(uint256 amount) external {
+        // Use the correct USDC token contract address
+        address usdcTokenAddress = 0x7303B11fbDA9200B6b365Ad0791D4ddee661b18e;
+        IERC20(usdcTokenAddress).approve(address(this), amount);
     }
 
     /**
