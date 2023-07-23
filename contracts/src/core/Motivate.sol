@@ -25,15 +25,15 @@ contract Motivate is Modifiers, Ownable {
         uint256 challengeID;
         uint256 startDate;
         uint256 paymentPerDay; // 1/21 of the user's wager
-        uint8 currentStreak;   // current checked-in streak of the user
-        uint256 amountOwed;    // amount owed to the user after every checked-in day
+        uint8 currentStreak; // current checked-in streak of the user
+        uint256 amountOwed; // amount owed to the user after every checked-in day
     }
 
     struct ChallengeInfo {
         uint256 balance;
         uint256 amountEarned;
-        // address[] winners; // redundant type here, since winners would be separate from the challenge
     }
+    // address[] winners; // redundant type here, since winners would be separate from the challenge
 
     struct Record {
         bool[21] challengeDays; // already set all values default to false
@@ -43,18 +43,23 @@ contract Motivate is Modifiers, Ownable {
     uint40 private constant CHALLENGE_CHECKIN_RATE = 1 days;
     uint256 constant MINIMUM_WAGER = 5_000_000; // 5 USDC
     // Need to deploy a mock USDC token on Moonbase Alpha testnet where people can freely obtain USDC
-    address private constant MOONBASE_ALPHA_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // needs to be changed
-    address private constant MOONBEAM_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // This is USDC address on Moonbeam mainnet
+    address private constant MOONBASE_ALPHA_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // needs to be
+        // changed
+    address private constant MOONBEAM_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // This is USDC address on
+        // Moonbeam mainnet
     // Mock temporary treasury EVM address below, will be replaced with real treasury address after deployed
     address private constant TREASURY_ADDR = 0x7B79079271A010E28b73d1F88c84C6720E2EF903;
-    // mock temporary prize pool address, can just use address(this) so it'll be the contract address
-    address private constant PRIZE_POOL_ADDR = 0xeD90B79f66830699E8D411Ebc5F99017B65b56B1;
-    address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha testnet
-    address public constant LOTTERY_DEPLOYED_CONTRACT_ADDRESS = 0x096407a84Cc500023B344902Cd0db43742603f34;  // on Moonbase Alpha testnet
+    // Prize pool address, can just use address(this) so it'll be the contract address
+    address private immutable PRIZE_POOL_ADDR = address(this);
+    address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha
+        // testnet
+    address public constant LOTTERY_DEPLOYED_CONTRACT_ADDRESS = 0x096407a84Cc500023B344902Cd0db43742603f34; // on
+        // Moonbase Alpha testnet
 
     uint256 private activityID; // counter for activity ID
     uint256 private s_minimumDeposit; // minimum deposit amount for the challenge
-    uint256 public monthEnd; // hold the UNIX timestamp for the end of the month
+    uint256[] public monthEnds = [1_690_815_599, 1_693_493_999, 1_696_085_999, 1_698_764_399]; // hold the UNIX
+        // timestamp for the end of the following 4 months
     address payable[] private s_eligibleParticipants;
     address payable[] private s_winners;
     mapping(address => mapping(uint256 => UserChallenge)) public userChallenges;
@@ -63,21 +68,22 @@ contract Motivate is Modifiers, Ownable {
     mapping(address => mapping(uint256 => Record)) private activityRecords;
 
     event StartedChallenge(address indexed user, uint256 indexed challengeID, uint256 amount);
-    event PickedWinners(address indexed s_winners);
+    event PickedWinners(address payable[] s_winners, uint256[] prizes, uint256 timestamp);
 
     Lottery public lotteryContract;
 
     constructor() Ownable(msg.sender) {
-        s_minimumDeposit = MINIMUM_WAGER; // set the minimum deposit amount
-        activityID = 1;  // activity ID = 1 when first initiated
+        s_minimumDeposit = MINIMUM_WAGER; // set the minimum deposit amount in USDC
+        activityID = 1; // activity ID = 1 when first initiated
         lotteryContract = Lottery(LOTTERY_DEPLOYED_CONTRACT_ADDRESS);
     }
 
     function startChallenge(
-        uint256 startDate,
-        uint256 amount // This is the user's pledge amount
+        uint256 startDate, // Needs to be passed in as UNIX timestamp from front-end
+        uint256 amount // This is the user's pledge amount in USDC
     )
-        external payable
+        external
+        payable
         dateMustExceedNow(startDate)
     {
         if (msg.value < s_minimumDeposit) {
@@ -98,16 +104,17 @@ contract Motivate is Modifiers, Ownable {
             amountPaid: amount,
             currentStreak: 0, // number of successful checked-in days
             amountOwed: 0 // amount that will be refunded to user at the end of the challenge
-        });
+         });
 
         userChallenges[msg.sender][challengeID] = userChallenge;
         userBalances[msg.sender] += amount;
 
         emit StartedChallenge(msg.sender, challengeID, amount);
 
-        bool successfulDepositToContract = IERC20(MOONBASE_ALPHA_USDC_ADDR).transferFrom(msg.sender, address(this), amount);
+        bool successfulDepositToContract =
+            IERC20(MOONBASE_ALPHA_USDC_ADDR).transferFrom(msg.sender, address(this), amount);
         require(successfulDepositToContract, "Transfer to contract failed!");
-        activityID+=1; // increase the activity ID after a challenge is created
+        activityID += 1; // increase the activity ID after a challenge is created
     }
 
     function recordChallenge(uint256 challengeID) external {
@@ -135,7 +142,7 @@ contract Motivate is Modifiers, Ownable {
             withdrawAtEndOfChallenge(msg.sender, challengeID); // Pass the user address as a parameter
         }
 
-        // These lines below may be redundant
+        // These lines below might be redundant
         challenge.amountEarned += balanceToPoolPrize;
         challengesByID[challengeID] = challenge;
     }
@@ -170,10 +177,7 @@ contract Motivate is Modifiers, Ownable {
     function withdrawAtEndOfChallenge(address user, uint256 challengeID) public onlyOwner {
         UserChallenge storage userChallenge = userChallenges[user][challengeID];
         require(userChallenge.challengeAccepted, "Challenge not found");
-        require(
-            msg.sender == user,
-            "Unauthorized: Only challenge initiator or owner can call this function"
-        );
+        require(msg.sender == user, "Unauthorized: Only challenge initiator or owner can call this function");
 
         if (userChallenge.currentStreak == 21) {
             // If challenge is completed, transfer the full amount paid back to the user
@@ -211,28 +215,39 @@ contract Motivate is Modifiers, Ownable {
 
         // Get the list of winners from the Lottery contract
         s_winners = lotteryContract.getWinners();
+
+        // Calculate prize amounts for each winner
+        uint256[] memory prizes = calculatePrizeAmounts();
+
+        // Distribute prizes to winners
+        for (uint256 i = 0; i < s_winners.length; i++) {
+            // Ensure the prize amount is not zero before transferring
+            require(prizes[i] > 0, "Prize amount cannot be zero");
+            IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(s_winners[i], prizes[i]);
+        }
+
+        emit PickedWinners(s_winners, prizes, block.timestamp);
     }
-
-    // function sweep(uint256 challengeId) external {
-    //     if ((challenge.startDate + 21 days) > block.timestamp) {
-    //         revert ChallengeOngoing();
-    //     }
-
-    //     for (uint i=0; i < counter; i++) {
-    //         currentValue = addressToValue[countToAddress[i]];
-    //     }
-
-    //     uint256 challengeId = getCID(challenge);
-
-    //     uint256 challengeBalance = challengeBalances[challengeId];
-    //     uint256 balanceToTreasury = (challengeBalance * 0.95 ether) / 1 ether;
-    //     SafeTransferLib.safeTransfer(MOONBEAM_USDC_ADDR, TREASURY_ADDR, balanceToTreasury);
-    // }
-
 
     function setMonthEnd(uint256 stamp) external onlyOwner {
         require(stamp > block.timestamp, "Month end must be greater than current timestamp");
-        monthEnd = stamp;
+        monthEnds.push(stamp); // This will push the new timestamp to the end of the array
+    }
+
+    function calculatePrizeAmounts() internal view returns (uint256[] memory) {
+        uint256 prizePoolBalance = IERC20(MOONBASE_ALPHA_USDC_ADDR).balanceOf(PRIZE_POOL_ADDR);
+
+        // Calculate the prize amounts based on the distribution percentages
+        uint256 firstPlacePrize = (prizePoolBalance * 5) / 100; // 5% of the prize pool
+        uint256 secondPlacePrize = (prizePoolBalance * 3) / 100; // 3% of the prize pool
+        uint256 thirdPlacePrize = (prizePoolBalance * 2) / 100; // 2% of the prize pool
+
+        uint256[] memory prizes = new uint256[](3);
+        prizes[0] = firstPlacePrize;
+        prizes[1] = secondPlacePrize;
+        prizes[2] = thirdPlacePrize;
+
+        return prizes;
     }
 
     function generateChallengeIdentifier(
@@ -254,15 +269,35 @@ contract Motivate is Modifiers, Ownable {
         return uint8(numberOfDays % 21);
     }
 
-    /** Getter function */
+    function _whichMonth(uint256 _startTimestamp) internal view returns (uint8) {
+        uint256 elapsedTime = block.timestamp - _startTimestamp;
+        uint256 numberOfMonths = elapsedTime / 30 days;
+        uint256 currentMonth = monthEnds.length; // Get the number of months recorded in monthEnds array
+        for (uint256 i = 0; i < monthEnds.length; i++) {
+            if (block.timestamp <= monthEnds[i]) {
+                currentMonth = i + 1; // The current month is the i-th month in the array
+                break;
+            }
+        }
+        return uint8((numberOfMonths + currentMonth) % 4);
+    }
+
+    /**
+     * Getter function
+     */
     function getMinimumDeposit() public view returns (uint256) {
         return s_minimumDeposit;
     }
 
     function getEligibileParticipants() external view returns (address payable[] memory) {
-      return s_eligibleParticipants;
+        return s_eligibleParticipants;
     }
+
     function getWinners() external view returns (address payable[] memory) {
-      return s_winners;
+        return s_winners;
+    }
+
+    function getPrizes() external view returns (uint256[] memory) {
+        return calculatePrizeAmounts();
     }
 }
