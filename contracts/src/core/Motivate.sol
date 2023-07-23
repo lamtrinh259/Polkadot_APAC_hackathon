@@ -222,7 +222,7 @@ contract Motivate is Modifiers, Ownable {
         // Distribute prizes to winners
         for (uint256 i = 0; i < s_winners.length; i++) {
             // Ensure the prize amount is not zero before transferring
-            require(prizes[i] > 0, "Prize amount cannot be zero");
+            // require(prizes[i] > 0, "Prize amount cannot be zero");
             IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(s_winners[i], prizes[i]);
         }
 
@@ -299,5 +299,9 @@ contract Motivate is Modifiers, Ownable {
 
     function getPrizes() external view returns (uint256[] memory) {
         return calculatePrizeAmounts();
+    }
+
+    function getPrizePoolBalance() external view returns (uint256) {
+        return IERC20(MOONBASE_ALPHA_USDC_ADDR).balanceOf(PRIZE_POOL_ADDR);
     }
 }
