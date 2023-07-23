@@ -11,24 +11,18 @@ nav{
     z-index: 1;
 }
 
-nav .logo{
-    font-size: 30px;
-    font-weight: bold;
-    letter-spacing: 1.5px;
+.newlogo{
+    height: 75px;
+    width:300px;
+    display: inline-block;
 }
 
-nav .logo a{
-    float: left;
-    color: #fff;
-    text-overflow: uppercase;
-}
 
-.platform{
-    background-color: gray;
-}
 
 nav ul{
-    text-align: center; 
+    position: relative;
+    left: -300px;
+    float: right; 
 }
 
 nav ul li{
@@ -50,12 +44,12 @@ nav ul li.launch{
 
 nav ul li a:hover{
     color: yellow;
-    cursor: pointer;
 }
 
 nav ul li:hover{
     background-color: #165e64;
 }
+
 
 
 @media (max-width: 930px) {

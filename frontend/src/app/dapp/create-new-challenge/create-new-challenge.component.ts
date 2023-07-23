@@ -13,5 +13,8 @@ export class CreateNewChallengeComponent implements OnInit {
   }
 
 
-
+  today : Date = new Date();
+  // today = new Date();
+  
+  
 }
