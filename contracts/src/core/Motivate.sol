@@ -8,13 +8,15 @@ import { Modifiers } from "../modifiers/Motivate.sol";
 contract Motivate is Modifiers, Ownable {
     /// @notice error thrown when there is a duplicate challenge.
     /// @dev duplictae challenge is a challenge with the same ID from a single User
-    error DuplicateChallenger();
+    error Motivate_DuplicateChallenger();
 
     /// @notice error thrown when there is an already recorded challenge for the day (timestamp)
-    error AlreadyRecorded();
+    error Motivate_AlreadyRecorded();
 
     /// @notice error for when admin tries to set record that user already set
-    error UserAlreadyRecordedChallenge();
+    error Motivate_UserAlreadyRecordedChallenge();
+
+    error Motivate_NotEnoughDepositAmount();
 
     struct UserChallenge {
         bool challengeAccepted; // did the user accept this challenge?
@@ -38,8 +40,9 @@ contract Motivate is Modifiers, Ownable {
 
     uint40 private constant CHALLENGE_DURATION = 21 days;
     uint40 private constant CHALLENGE_CHECKIN_RATE = 1 days;
-    uint256 private constant MINIMUM_WAGER = 5_000_000; // 5 USDC
-    // Might need to deploy a mock USDC token
+    uint256 constant MINIMUM_WAGER = 5_000_000; // 5 USDC
+    // Need to deploy a mock USDC token on Moonbase Alpha testnet where people can freely obtain USDC
+    address private constant MOONBASE_ALPHA_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // needs to be changed
     address private constant MOONBEAM_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // This is USDC address on Moonbeam mainnet
     // Mock temporary treasury EVM address below, will be replaced with real treasury address after deployed
     address private constant TREASURY_ADDR = 0x7B79079271A010E28b73d1F88c84C6720E2EF903;
@@ -48,6 +51,7 @@ contract Motivate is Modifiers, Ownable {
     address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha testnet
 
     uint256 private activityID; // counter for activity ID
+    uint256 private s_minimumDeposit; // minimum deposit amount for the challenge
     uint256 public monthEnd; // hold the UNIX timestamp for the end of the month
     address payable[] private s_eligibleParticipants;
     address payable[] private s_winners;
@@ -57,23 +61,27 @@ contract Motivate is Modifiers, Ownable {
     mapping(address => mapping(uint256 => Record)) private activityRecords;
 
     event StartedChallenge(address indexed user, uint256 indexed challengeID, uint256 amount);
+    event PickedWinners(address indexed s_winners);
 
     constructor() Ownable(msg.sender) {
+        s_minimumDeposit = MINIMUM_WAGER; // set the minimum deposit amount
         activityID = 1;  // activity ID = 1 when first initiated
     }
 
     function startChallenge(
         uint256 startDate,
-        uint256 amount
+        uint256 amount // This is the user's pledge amount
     )
-        external
+        external payable
         dateMustExceedNow(startDate)
-        amountMustExceedMinWager(amount)
     {
+        if (msg.value < s_minimumDeposit) {
+            revert Motivate_NotEnoughDepositAmount();
+        }
         uint256 currentId = activityID;
         uint256 challengeID = generateChallengeIdentifier(startDate, currentId, amount);
         if (userChallenges[msg.sender][challengeID].challengeAccepted) {
-            revert DuplicateChallenger();
+            revert Motivate_DuplicateChallenger();
         }
 
         /// @notice create the user's challenge
@@ -83,8 +91,8 @@ contract Motivate is Modifiers, Ownable {
             challengeID: challengeID,
             startDate: startDate,
             amountPaid: amount,
-            currentStreak: 0,
-            amountOwed: 0
+            currentStreak: 0, // number of successful checked-in days
+            amountOwed: 0 // amount that will be refunded to user at the end of the challenge
         });
 
         userChallenges[msg.sender][challengeID] = userChallenge;
@@ -92,8 +100,8 @@ contract Motivate is Modifiers, Ownable {
 
         emit StartedChallenge(msg.sender, challengeID, amount);
 
-        bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(msg.sender, address(this), amount);
-        require(success, "Transfer Failed!");
+        bool successfulDepositToContract = IERC20(MOONBASE_ALPHA_USDC_ADDR).transferFrom(msg.sender, address(this), amount);
+        require(successfulDepositToContract, "Transfer to contract failed!");
         activityID+=1; // increase the activity ID after a challenge is created
     }
 
@@ -114,18 +122,16 @@ contract Motivate is Modifiers, Ownable {
             // Update record for the current day to be true
             activityRecords[msg.sender][challengeID].challengeDays[day] = true;
         } else {
-            revert AlreadyRecorded();
+            revert Motivate_AlreadyRecorded();
         }
 
-        if (day == 20 && userChallenge.currentStreak == 14) {
-            /// push into an array of eligible participants
-            s_eligibleParticipants.push(payable(msg.sender));
+        if (day == 20) {
+            // call withdrawAtEndOfChallenge function for the user and challengeID
+            withdrawAtEndOfChallenge(msg.sender, challengeID); // Pass the user address as a parameter
         }
 
         challenge.amountEarned += balanceToPoolPrize;
         challengesByID[challengeID] = challenge;
-        /// This should update the challenge info for user and id
-        // bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(address(this), msg.sender, balanceToPoolPrize);
     }
 
     function setRecord(address _user, uint256 _challengeId, uint8 _n) internal returns (bool) {
@@ -145,33 +151,48 @@ contract Motivate is Modifiers, Ownable {
         UserChallenge memory challenge = userChallenges[user][challengeID];
         Record storage userRecord = activityRecords[user][challengeID];
 
-        if (userRecord.challengeDays[_n] == true) revert UserAlreadyRecordedChallenge();
+        if (userRecord.challengeDays[_n] == true) revert Motivate_UserAlreadyRecordedChallenge();
         userRecord.challengeDays[_n] = false; // Set the day as failed (not checked-in)
         uint256 amountPerDay = challenge.paymentPerDay;
         uint256 amountForTreasury = amountPerDay * 50 / 100;
         uint256 amountForPrizePool = amountPerDay * 50 / 100;
 
-        IERC20(MOONBEAM_USDC_ADDR).transfer(TREASURY_ADDR, amountForTreasury);
-        IERC20(MOONBEAM_USDC_ADDR).transfer(PRIZE_POOL_ADDR, amountForPrizePool);
+        IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(TREASURY_ADDR, amountForTreasury);
+        IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(PRIZE_POOL_ADDR, amountForPrizePool);
     }
 
-    function withdrawAtEndOfChallenge(address user, uint256 challengeID) external onlyChallengeInitiator(user) onlyOwner {
+    function withdrawAtEndOfChallenge(address user, uint256 challengeID) public onlyOwner {
         UserChallenge storage userChallenge = userChallenges[user][challengeID];
         require(userChallenge.challengeAccepted, "Challenge not found");
+        require(
+            msg.sender == user,
+            "Unauthorized: Only challenge initiator or owner can call this function"
+        );
 
         if (userChallenge.currentStreak == 21) {
             // If challenge is completed, transfer the full amount paid back to the user
-            IERC20(MOONBEAM_USDC_ADDR).transfer(user, userChallenge.amountPaid);
+            IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(user, userChallenge.amountPaid);
+            // push into an array of eligible participants
+            s_eligibleParticipants.push(payable(user));
+        } else if (userChallenge.currentStreak >= 14 && userChallenge.currentStreak < 21) {
+            // push into an array of eligible participants
+            s_eligibleParticipants.push(payable(user));
+            // Calculate the amount owed based on the completed days and paymentPerDay
+            uint256 daysCompleted = userChallenge.currentStreak;
+            uint256 amountOwed = daysCompleted * userChallenge.paymentPerDay;
+
+            // Transfer the amount owed to the user
+            IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(user, amountOwed);
         } else {
             // Calculate the amount owed based on the completed days and paymentPerDay
             uint256 daysCompleted = userChallenge.currentStreak;
             uint256 amountOwed = daysCompleted * userChallenge.paymentPerDay;
 
             // Transfer the amount owed to the user
-            IERC20(MOONBEAM_USDC_ADDR).transfer(user, amountOwed);
+            IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(user, amountOwed);
         }
 
-        // Reset the UserChallenge struct
+        // Reset the UserChallenge struct, might not be necessary
         delete userChallenges[user][challengeID];
     }
 
@@ -191,11 +212,6 @@ contract Motivate is Modifiers, Ownable {
     //     SafeTransferLib.safeTransfer(MOONBEAM_USDC_ADDR, TREASURY_ADDR, balanceToTreasury);
     // }
 
-    /// Withdraw
-
-
-
-
 
     function setMonthEnd(uint256 stamp) external onlyOwner {
         require(stamp > block.timestamp, "Month end must be greater than current timestamp");
@@ -214,11 +230,16 @@ contract Motivate is Modifiers, Ownable {
         return uint256(keccak256(abi.encodePacked(activityId, startDate, amount)));
     }
 
-    // Modified this so that it should return the day of the challenge, a value between 0 and 20 (inclusive)
+    /// @notice This function returns the current day index of the challenge, a value between 0 and 20 (inclusive)
     function _whichDay(uint256 _startTimestamp) internal view returns (uint8) {
         uint256 elapsedTime = block.timestamp - _startTimestamp;
         uint256 numberOfDays = elapsedTime / 1 days;
         return uint8(numberOfDays % 21);
+    }
+
+    /** Getter function */
+    function getMinimumDeposit() public view returns (uint256) {
+        return s_minimumDeposit;
     }
 
     function getEligibileParticipants() external view returns (address payable[] memory) {
