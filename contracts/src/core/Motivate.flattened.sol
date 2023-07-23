@@ -412,9 +412,8 @@ contract Motivate is Modifiers, Ownable {
     uint40 private constant CHALLENGE_DURATION = 21 days;
     uint40 private constant CHALLENGE_CHECKIN_RATE = 1 days;
     uint256 constant MINIMUM_WAGER = 5_000_000; // 5 USDC
-    // Need to deploy a mock USDC token on Moonbase Alpha testnet where people can freely obtain USDC
-    address private constant MOONBASE_ALPHA_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // needs to be
-        // changed
+    // This is USDC address on Moonbase Alpha testnet
+    address private constant MOONBASE_ALPHA_USDC_ADDR = 0x7303B11fbDA9200B6b365Ad0791D4ddee661b18e;
     address private constant MOONBEAM_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // This is USDC address on
         // Moonbeam mainnet
     // Treasury address (temporary), until a permanent one is set up like Safe

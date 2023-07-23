@@ -7,12 +7,10 @@ import { MINIMUM_WAGER, LOTTERY_DEPLOYED_CONTRACT_ADDRESS } from "../lib/Constan
 
 contract DeployMotivate is Script {
 
-    function setup() public {}
+    function setUp() public {}
 
-    function run() external returns (Motivate) {
+    function run() public {
         vm.broadcast();
-        Motivate motivate = new Motivate();
-        vm.stopBroadcast();
-        return motivate;
+        new Motivate();
     }
 }

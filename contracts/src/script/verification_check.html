@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contract Source Code Verification Status</title>
+</head>
+<body>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "//api-moonbase.moonscan.io/api",
+                data: {
+                    apikey: $('RT8A8UH697XZZEIRVUUZK2IU4DA8IY7SIR').val(),
+                    guid: '8y4z2mq7xnqxdljavyrev9auwunpprhdnenkcmry3metggzbi9', //Replace with your Source Code GUID receipt above
+                    module: "contract",
+                    action: "checkverifystatus"
+                },
+                success: function (result) {
+                    console.log("status : " + result.status);   //0=Error, 1=Pass
+                    console.log("message : " + result.message); //OK, NOTOK
+                    console.log("result : " + result.result);   //result explanation
+                    $('#guidstatus').html(">> " + result.result);
+                },
+                error: function (result) {
+                    alert('error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
