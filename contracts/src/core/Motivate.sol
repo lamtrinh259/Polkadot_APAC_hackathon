@@ -67,7 +67,7 @@ contract Motivate is Modifiers, Ownable {
 
     Lottery public lotteryContract;
 
-    constructor() {
+    constructor() Ownable(msg.sender) {
         s_minimumDeposit = MINIMUM_WAGER; // set the minimum deposit amount
         activityID = 1;  // activity ID = 1 when first initiated
         lotteryContract = Lottery(LOTTERY_DEPLOYED_CONTRACT_ADDRESS);
