@@ -47,8 +47,8 @@ contract Motivate is Modifiers, Ownable {
         // changed
     address private constant MOONBEAM_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // This is USDC address on
         // Moonbeam mainnet
-    // Mock temporary treasury EVM address below, will be replaced with real treasury address after deployed
-    address private constant TREASURY_ADDR = 0x7B79079271A010E28b73d1F88c84C6720E2EF903;
+    // Treasury address (temporary), until a permanent one is set up like Safe
+    address private constant TREASURY_ADDR = 0xeD90B79f66830699E8D411Ebc5F99017B65b56B1;
     // Prize pool address, can just use address(this) so it'll be the contract address
     address private immutable PRIZE_POOL_ADDR = address(this);
     address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha
