@@ -26,16 +26,15 @@
 .connect{
     position:relative;
     top: -75px;
-    left: 1000px;
-    width: 200px;
+    left: 250px;
+    width: 150px;
     height: 75px;
     color: white;
-
+    text-align: center;
 }
 
 .connect:hover{
     color: red;
     background-color: #165e64;
     cursor: pointer;
-
 }

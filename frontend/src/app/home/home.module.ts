@@ -4,13 +4,34 @@ import { HomeComponent } from './home.component';
 import { NavComponent } from './nav/nav.component';
 import { HowTheAppFunctionsComponent } from './how-the-app-functions/how-the-app-functions.component';
 import { CurrentPledgesComponent } from './current-pledges/current-pledges.component';
-import { SharedModule } from '../shared/shared.module';
 import { RouterModule, Routes } from '@angular/router';
+import { FAQComponent } from './faq/faq.component';
+import { FooterComponent } from './footer/footer.component';
 
 const routes: Routes = [
   {
     path: '',
     component: HomeComponent,
+  },
+
+  {
+    path: 'how-the-app-functions',
+    component: HowTheAppFunctionsComponent,
+  },
+
+  {
+    path: 'current-pledges',
+    component: CurrentPledgesComponent,
+  },
+
+  {
+    path: 'faq',
+    component: FAQComponent,
+  },
+
+  {
+    path: 'footer',
+    component: FooterComponent,
   }
 ];
 
@@ -19,11 +40,12 @@ const routes: Routes = [
     HomeComponent,
     NavComponent, 
     HowTheAppFunctionsComponent,
-    CurrentPledgesComponent
+    CurrentPledgesComponent,
+    FAQComponent,
+    FooterComponent
   ],
   imports: [
-    CommonModule,
-    SharedModule, RouterModule.forChild(routes)
+    CommonModule, RouterModule.forChild(routes)
   ]
 })
 export class HomeModule { }
