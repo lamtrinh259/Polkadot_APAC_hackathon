@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 import { MINIMUM_WAGER } from "../lib/Constants.sol";
-// import { Errors } from "../lib/Errors.sol";
 
 abstract contract Modifiers {
     /// @notice error thrown if challenge has not started
