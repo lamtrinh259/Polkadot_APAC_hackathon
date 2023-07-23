@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Modifiers } from "../modifiers/Motivate.sol";
+import { Lottery } from "../lib/Lottery.sol";
 
 contract Motivate is Modifiers, Ownable {
     /// @notice error thrown when there is a duplicate challenge.
@@ -46,10 +47,11 @@ contract Motivate is Modifiers, Ownable {
     address private constant MOONBEAM_USDC_ADDR = 0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b; // This is USDC address on Moonbeam mainnet
     // Mock temporary treasury EVM address below, will be replaced with real treasury address after deployed
     address private constant TREASURY_ADDR = 0x7B79079271A010E28b73d1F88c84C6720E2EF903;
-    // mock temporary prize pool address
+    // mock temporary prize pool address, can just use address(this) so it'll be the contract address
     address private constant PRIZE_POOL_ADDR = 0xeD90B79f66830699E8D411Ebc5F99017B65b56B1;
     address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha testnet
 
+    address public lotteryContract; // Address of the Lottery contract
     uint256 private activityID; // counter for activity ID
     uint256 private s_minimumDeposit; // minimum deposit amount for the challenge
     uint256 public monthEnd; // hold the UNIX timestamp for the end of the month
@@ -66,6 +68,7 @@ contract Motivate is Modifiers, Ownable {
     constructor() Ownable(msg.sender) {
         s_minimumDeposit = MINIMUM_WAGER; // set the minimum deposit amount
         activityID = 1;  // activity ID = 1 when first initiated
+        lotteryContract = address(new Lottery(DIA_ORACLE_ADDRESS, s_eligibleParticipants));
     }
 
     function startChallenge(
@@ -130,6 +133,7 @@ contract Motivate is Modifiers, Ownable {
             withdrawAtEndOfChallenge(msg.sender, challengeID); // Pass the user address as a parameter
         }
 
+        // These lines below may be redundant
         challenge.amountEarned += balanceToPoolPrize;
         challengesByID[challengeID] = challenge;
     }
@@ -158,7 +162,7 @@ contract Motivate is Modifiers, Ownable {
         uint256 amountForPrizePool = amountPerDay * 50 / 100;
 
         IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(TREASURY_ADDR, amountForTreasury);
-        IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(PRIZE_POOL_ADDR, amountForPrizePool);
+        IERC20(MOONBASE_ALPHA_USDC_ADDR).transfer(address(this), amountForPrizePool);
     }
 
     function withdrawAtEndOfChallenge(address user, uint256 challengeID) public onlyOwner {
@@ -194,6 +198,18 @@ contract Motivate is Modifiers, Ownable {
 
         // Reset the UserChallenge struct, might not be necessary
         delete userChallenges[user][challengeID];
+    }
+
+    function pickWinners(address payable[] calldata s_eligibleParticipants) external onlyOwner {
+        // Ensure that the lotteryContract has been deployed
+        require(lotteryContract != address(0), "Lottery contract not deployed");
+
+        // Call the drawWinners function in the Lottery contract to pick winners
+        Lottery lottery = Lottery(DIA_ORACLE_ADDRESS, s_eligibleParticipants);
+        lottery.drawWinners();
+
+        // Get the list of winners from the Lottery contract
+        s_winners = lottery.getWinners();
     }
 
     // function sweep(uint256 challengeId) external {
