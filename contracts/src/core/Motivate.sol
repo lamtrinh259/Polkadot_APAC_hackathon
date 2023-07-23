@@ -50,6 +50,7 @@ contract Motivate is Modifiers, Ownable {
     // mock temporary prize pool address, can just use address(this) so it'll be the contract address
     address private constant PRIZE_POOL_ADDR = 0xeD90B79f66830699E8D411Ebc5F99017B65b56B1;
     address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha testnet
+    address public constant LOTTERY_DEPLOYED_CONTRACT_ADDRESS = 0x096407a84Cc500023B344902Cd0db43742603f34;  // on Moonbase Alpha testnet
 
     uint256 private activityID; // counter for activity ID
     uint256 private s_minimumDeposit; // minimum deposit amount for the challenge
@@ -66,10 +67,10 @@ contract Motivate is Modifiers, Ownable {
 
     Lottery public lotteryContract;
 
-    constructor() Ownable(msg.sender) {
+    constructor() {
         s_minimumDeposit = MINIMUM_WAGER; // set the minimum deposit amount
         activityID = 1;  // activity ID = 1 when first initiated
-        lotteryContract = Lottery(DIA_ORACLE_ADDRESS);
+        lotteryContract = Lottery(LOTTERY_DEPLOYED_CONTRACT_ADDRESS);
     }
 
     function startChallenge(
