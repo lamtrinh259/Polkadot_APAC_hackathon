@@ -50,8 +50,8 @@ contract Motivate is Modifiers, Ownable {
     // mock temporary prize pool address, can just use address(this) so it'll be the contract address
     address private constant PRIZE_POOL_ADDR = 0xeD90B79f66830699E8D411Ebc5F99017B65b56B1;
     address public constant DIA_ORACLE_ADDRESS = 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec; // on Moonbase Alpha testnet
+    address public constant LOTTERY_DEPLOYED_CONTRACT_ADDRESS = 0x096407a84Cc500023B344902Cd0db43742603f34;  // on Moonbase Alpha testnet
 
-    address public lotteryContract; // Address of the Lottery contract
     uint256 private activityID; // counter for activity ID
     uint256 private s_minimumDeposit; // minimum deposit amount for the challenge
     uint256 public monthEnd; // hold the UNIX timestamp for the end of the month
@@ -65,10 +65,12 @@ contract Motivate is Modifiers, Ownable {
     event StartedChallenge(address indexed user, uint256 indexed challengeID, uint256 amount);
     event PickedWinners(address indexed s_winners);
 
-    constructor() Ownable(msg.sender) {
+    Lottery public lotteryContract;
+
+    constructor() {
         s_minimumDeposit = MINIMUM_WAGER; // set the minimum deposit amount
         activityID = 1;  // activity ID = 1 when first initiated
-        lotteryContract = address(new Lottery(DIA_ORACLE_ADDRESS, s_eligibleParticipants));
+        lotteryContract = Lottery(LOTTERY_DEPLOYED_CONTRACT_ADDRESS);
     }
 
     function startChallenge(
@@ -200,16 +202,15 @@ contract Motivate is Modifiers, Ownable {
         delete userChallenges[user][challengeID];
     }
 
-    function pickWinners(address payable[] calldata s_eligibleParticipants) external onlyOwner {
+    function pickWinners() external onlyOwner {
         // Ensure that the lotteryContract has been deployed
-        require(lotteryContract != address(0), "Lottery contract not deployed");
+        require(address(lotteryContract) != address(0), "Lottery contract not deployed");
 
         // Call the drawWinners function in the Lottery contract to pick winners
-        Lottery lottery = Lottery(DIA_ORACLE_ADDRESS, s_eligibleParticipants);
-        lottery.drawWinners();
+        lotteryContract.drawWinners(s_eligibleParticipants);
 
         // Get the list of winners from the Lottery contract
-        s_winners = lottery.getWinners();
+        s_winners = lotteryContract.getWinners();
     }
 
     // function sweep(uint256 challengeId) external {

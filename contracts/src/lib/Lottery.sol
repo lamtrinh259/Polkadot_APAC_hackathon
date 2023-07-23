@@ -7,13 +7,10 @@ contract Lottery {
     address public randomOracle; // Randomness oracle
     uint256 latestRoundId = 0; // latest randomness round
 
-    address payable[] public participants;
     address payable[] public winners;
 
-    constructor(address oracle, address payable[] memory _participants) {
+    constructor(address oracle) {
         randomOracle = oracle; //Oracle address : 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec (also in constants.sol)
-        participants = _participants;
-        latestRoundId = DIARandomOracle(randomOracle).getLastRound();
     }
 
     function getRandomValue(uint256 _round) public view returns (string memory) {
@@ -21,9 +18,9 @@ contract Lottery {
     }
 
     // main function: executing the protocol here
-    function drawWinners() public {
+    function drawWinners(address payable [] memory  participants) public {
         // Clear the winners array
-        winners = new address payable[](0);
+        winners = new address payable [](0);
 
         // Ensure there is at least one participant
         require(participants.length >= 1, "There should be at least 1 participant");
@@ -55,13 +52,18 @@ contract Lottery {
             string memory rand = getRandomValue(latestRoundId);
 
             // Draw winners
+            uint256 remainingParticipants = participants.length;
             for (uint256 i = 0; i < num_winners; i++) {
-                uint256 randomIndex = (uint256(keccak256(abi.encodePacked(rand, i))) % participants.length);
+                uint256 randomIndex = (uint256(keccak256(abi.encodePacked(rand, i))) % remainingParticipants);
                 winners.push(participants[randomIndex]);
 
-                // Remove the winner from the participants array
-                participants[randomIndex] = participants[participants.length - 1];
-                participants.pop();
+                // Swap the selected participant with the last remaining participant
+                if (randomIndex < remainingParticipants-1) {
+                    participants[randomIndex] = participants[remainingParticipants - 1];
+                }
+
+                // Decrease the number of remaining participants
+                remainingParticipants--;
             }
         }
     }
