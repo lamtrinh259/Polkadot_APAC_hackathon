@@ -17,8 +17,9 @@ abstract contract Modifiers {
     modifier amountMustExceedMinWager(uint256 amount) {
         if (amount < MINIMUM_WAGER) {
             revert InsufficientWager();
+        } else {
+            _;
         }
-        _;
     }
 
     modifier dateMustExceedNow(uint256 startDate) {
