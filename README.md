@@ -55,13 +55,13 @@ Below are the contracts that are deployed on the different Polkadot side chain(s
 
 | Contract    |                           Contract address |
 | :---------- | -----------------------------------------: |
-| Motivate    | insert_contract_address_here               |
+| Motivate    | 0x21aBE8434f543FF12b5f26d23b83fE709357977a |
 | DIA oracle  | 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec |
 | USDC        | 0x7303B11fbDA9200B6b365Ad0791D4ddee661b18e |
 | Lottery     | 0x096407a84Cc500023B344902Cd0db43742603f34 |
 
-The verified smart contract for Moonbase Alpha Testnet is:
-<link>
+The link to the smart contract of Motivate for Moonbase Alpha Testnet is:
+<https://moonbase.moonscan.io/address/0x21abe8434f543ff12b5f26d23b83fe709357977a>
 
 ### Moonbeam mainnet (chainID: 1284)
 *To be deployed in the future*
@@ -77,6 +77,7 @@ The verified smart contract for Moonbase Alpha Testnet is:
 
 
 ### Demo site
+http://polkadot-apac-hackathon.vercel.app/
 
 To interact with the smart contract on the site, user needs to have a Metamask wallet. If user doesn't have one yet, they can download it from here: https://metamask.io/download/
 If user already has Metamask installed, he/she needs to add the Moonbase Alpha testnet to the wallet by going to this site: https://chainlist.org/?search=Moonbase
