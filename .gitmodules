@@ -1,6 +1,9 @@
-# [submodule "contracts/lib/openzeppelin-contracts"]
-# 	path = contracts/lib/openzeppelin-contracts
-# 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "contracts/lib/forge-std"]
+	path = contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
 [submodule "contracts/lib/openzeppelin-contracts"]
 	path = contracts/lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
+[submodule "contracts/lib/forge-std/lib/ds-test"]
+	path = contracts/lib/forge-std/lib/ds-test
+  url = https://github.com/dapphub/ds-test/tree/e282159d5170298eb2455a6c05280ab5a73a4ef0

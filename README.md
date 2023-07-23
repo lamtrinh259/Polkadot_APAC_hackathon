@@ -91,3 +91,12 @@ pnpm install
 ```bash
 pnpm start
 ```
+
+### To install Foundry dependencies
+1. Go to root folder
+2. Install the dependencies
+```bash
+forge install foundry-rs/forge-std --no-commit
+forge install OpenZeppelin/openzeppelin-contracts --no-commit
+```
+3. Then make sure to modify the paths in .gitmodules file to point to the correct paths of the libraries folder
