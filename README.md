@@ -1,7 +1,12 @@
 # Official repo for Polkadot APAC Hackathon 2023
 ## Project name: Habitum
 
-## Project description
+## Team name: Habitum_Rocks
+Team members (github username) and roles: lamtrinh259 (team leader), kevin-fruitful (initial smart contract developer), Tbalo (front-end developer), ymayank97 (randomness oracle researcher), bolajahmad (smart contract developer)
+
+## Main track submitted for: Mass Adoption
+
+## Project summary
 Habitum is a transformative blockchain-based DApp focused on empowering users to solidify life-enriching habits. By combining the principles of psychology, accountability, and the decentralized power of the blockchain, we help individuals navigate their personal journey
 towards lasting behavioral change.
 
@@ -26,8 +31,14 @@ At the end of the 21 days, the user will be able to withdraw the respective amou
 
 For the monthly drawing, it will be conducted at the end of the month. There will be 3 prizes given out randomly to 3 eligible participants. The prizes will be drawn in this order: 1st, 2nd, and 3rd. 1st, 2nd, and 3rd places are worth 5%, 3%, and 2% of the public prize pool respectively. The prizes will be sent to the winners' wallet address automatically. We use DIA oracle on the Moonbeam testnet in order to ensure the fairness and randomness in the drawing.
 
+## Tech stack
+For the smart contract, we used Solidity and Foundry to build the project. We use libraries from forge standard, and openzeppelin contracts. For the randomness oracle used in the monthly drawing, we use DIA oracle deployed on the Moonbase Alpha testnet.
 
-## Future Work
+For the front-end, we use Angular framework and Tailwind CSS to build the project. We also use WAGMI and ethers.js to interact with the smart contract.
+
+We use Foundry to deploy the smart contract to Moonbase Alpha testnet and front-end is deployed on Vercel.
+
+## Future Plans
 Some future ideas of how we can build out the app further to add more values into the users:
 - Using account abstraction, let users create an account with just their email address, abstracting away the difficulty of using Web3 wallets. - - Integrate an existing option for users to on-ramp with fiat currency.
 - Build out integrations with other wallets such as Phantom, Ledger, WalletConnect, etc.
@@ -49,23 +60,15 @@ Below are the contracts that are deployed on the different Polkadot side chains.
 The verified smart contract for Moonbeam is:
 <link>
 
-### Moonbeam Alpha Testnet (chainID: 1287)
+### Moonbase Alpha Testnet (chainID: 1287)
 
 | Contract    |                           Contract address |
 | :---------- | -----------------------------------------: |
 | Motivate    | insert_contract_address_here |
-| DIA oracle  | insert_contract_address_here |
+| DIA oracle  | 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec |
 
-The verified smart contract for Moonbeam Alpha Testnet is:
+The verified smart contract for Moonbase Alpha Testnet is:
 <link>
-
-### Other chain (chainID: xxx)
-
-| Contract    |                           Contract address |
-| :---------- | -----------------------------------------: |
-| Motivate    | insert_contract_address_here |
-| DIA oracle  | insert_contract_address_here |
-The verified smart contract for other chain is:
 
 
 ## Other artefacts
@@ -75,8 +78,10 @@ The verified smart contract for other chain is:
 
 ### Demo site
 
+To interact with the smart contract on the site, user needs to have a Metamask wallet. If user doesn't have one yet, they can download it from here: https://metamask.io/download/
+If user already has Metamask installed, he/she needs to add the Moonbase Alpha testnet to the wallet by going to this site: https://chainlist.org/?search=Moonbase
 
-### How to run locally
+### How to run the app locally
 1. Go to the Frontend folder
 2. Install the dependencies
 ```bash

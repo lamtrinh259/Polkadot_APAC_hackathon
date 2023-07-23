@@ -7,10 +7,10 @@ contract Lottery {
     address public randomOracle; // Randomness oracle
     uint256 latestRoundId = 0; // latest randomness round
 
-    address[] public participants;
-    address[] public winners;
+    address payable[] public participants;
+    address payable[] public winners;
 
-    constructor(address oracle, address[] memory _participants) {
+    constructor(address oracle, address payable[] memory _participants) {
         randomOracle = oracle; //Oracle address : 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec (also in constants.sol)
         participants = _participants;
         latestRoundId = DIARandomOracle(randomOracle).getLastRound();
@@ -23,7 +23,7 @@ contract Lottery {
     // main function: executing the protocol here
     function drawWinners() public {
         // Clear the winners array
-        winners = new address[](0);
+        winners = new address payable[](0);
 
         // Ensure there is at least one participant
         require(participants.length >= 1, "There should be at least 1 participant");
@@ -66,7 +66,7 @@ contract Lottery {
         }
     }
 
-    function getWinners() public view returns (address[] memory) {
+    function getWinners() public view returns (address payable[] memory) {
         return winners;
     }
 }
