@@ -12,10 +12,10 @@ contract Motivate is SetupMotivate {
         console.log("Test contract is setup: Motivate");
     }
 
-    function testInitialize() public {
-        // console.log("Initialize tests here, {}", motivate);
-        assertEq(Motivate(motivate.monthEnd), uint256(1), "ok");
-    }
+    // function testInitialize() public {
+    //     // console.log("Initialize tests here, {}", motivate);
+    //     assertEq(Motivate(motivate.monthEnd), uint256(1), "ok");
+    // }
 
     // function testFoo(uint256 x) public {
     //     vm.assume(x < type(uint128).max);

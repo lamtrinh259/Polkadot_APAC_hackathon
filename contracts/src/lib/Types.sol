@@ -10,7 +10,7 @@ struct UserChallenge {
 }
 
 struct ChallengeInfo {
-    uint256 balance;
+    uint256     balance;
     uint256 amountEarned;
     address[] winners;
 }
