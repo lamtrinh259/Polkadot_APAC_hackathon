@@ -49,26 +49,26 @@ Some future ideas of how we can build out the app further to add more values int
 - Build out a mobile app that can be used to check in and complete the challenges.
 
 ## Deployed contracts
-Below are the contracts that are deployed on the different Polkadot side chains.
-
-### Moonbeam mainnet (chainID: 1284)
-
-| Contract    |                           Contract address |
-| :---------- | -----------------------------------------: |
-| Motivate    | insert_contract_address_here |
-| DIA oracle  | insert_contract_address_here |
-The verified smart contract for Moonbeam is:
-<link>
+Below are the contracts that are deployed on the different Polkadot side chain(s).
 
 ### Moonbase Alpha Testnet (chainID: 1287)
 
 | Contract    |                           Contract address |
 | :---------- | -----------------------------------------: |
-| Motivate    | insert_contract_address_here |
+| Motivate    | insert_contract_address_here               |
 | DIA oracle  | 0x48d351aB7f8646239BbadE95c3Cc6de3eF4A6cec |
+| USDC        | 0x7303B11fbDA9200B6b365Ad0791D4ddee661b18e |
+| Lottery     | 0x096407a84Cc500023B344902Cd0db43742603f34 |
 
 The verified smart contract for Moonbase Alpha Testnet is:
 <link>
+
+### Moonbeam mainnet (chainID: 1284)
+*To be deployed in the future*
+| Contract    |                           Contract address |
+| :---------- | -----------------------------------------: |
+| Motivate    | insert_contract_address_here |
+| DIA oracle  | insert_contract_address_here |
 
 
 ## Other artefacts
