@@ -3,9 +3,6 @@ pragma solidity ^0.8.18;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-// import { MINIMUM_WAGER, MOONBEAM_USDC_ADDR, TREASURY_ADDR, PRIZE_POOL_ADDR } from "../lib/Constants.sol";
-// import { UserChallenge, ChallengeInfo, Record } from "../lib/Types.sol";
-// import { Errors } from "../lib/Errors.sol";
 import { Modifiers } from "../modifiers/Motivate.sol";
 
 contract Motivate is Modifiers, Ownable {
@@ -32,11 +29,11 @@ contract Motivate is Modifiers, Ownable {
     struct ChallengeInfo {
         uint256 balance;
         uint256 amountEarned;
-        address[] winners;
+        // address[] winners; // redundant type here, since winners would be separate from the challenge
     }
 
     struct Record {
-        bool[21] challengeDays;
+        bool[21] challengeDays; // already set all values default to false
     }
 
     uint40 private constant CHALLENGE_DURATION = 21 days;
@@ -52,8 +49,8 @@ contract Motivate is Modifiers, Ownable {
 
     uint256 private activityID; // counter for activity ID
     uint256 public monthEnd; // hold the UNIX timestamp for the end of the month
-    address payable[] private eligibleParticipants;
-    address payable[] private winners;
+    address payable[] private s_eligibleParticipants;
+    address payable[] private s_winners;
     mapping(address => mapping(uint256 => UserChallenge)) public userChallenges;
     mapping(address => uint256) public userBalances;
     mapping(uint256 => ChallengeInfo) public challengesByID;
@@ -121,16 +118,61 @@ contract Motivate is Modifiers, Ownable {
         }
 
         if (day == 20 && userChallenge.currentStreak == 14) {
-            if (allBoolsTrue(msg.sender, challengeID)) {
-                /// push into an array of eligible participants
-                eligibleParticipants.push(payable(msg.sender));
-            }
+            /// push into an array of eligible participants
+            s_eligibleParticipants.push(payable(msg.sender));
         }
 
         challenge.amountEarned += balanceToPoolPrize;
         challengesByID[challengeID] = challenge;
         /// This should update the challenge info for user and id
         // bool success = IERC20(MOONBEAM_USDC_ADDR).transferFrom(address(this), msg.sender, balanceToPoolPrize);
+    }
+
+    function setRecord(address _user, uint256 _challengeId, uint8 _n) internal returns (bool) {
+        require(_n < 21, "Index out of bounds"); // ensure n is within 0 to 20
+
+        Record storage userRecord = activityRecords[_user][_challengeId];
+        if (userRecord.challengeDays[_n] == false) {
+            userRecord.challengeDays[_n] = true;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /// @dev this function may not be necessary since the default value in the boolean is already false
+    function adminRecordFailedDay(address user, uint256 challengeID, uint8 _n) external onlyOwner {
+        UserChallenge memory challenge = userChallenges[user][challengeID];
+        Record storage userRecord = activityRecords[user][challengeID];
+
+        if (userRecord.challengeDays[_n] == true) revert UserAlreadyRecordedChallenge();
+        userRecord.challengeDays[_n] = false; // Set the day as failed (not checked-in)
+        uint256 amountPerDay = challenge.paymentPerDay;
+        uint256 amountForTreasury = amountPerDay * 50 / 100;
+        uint256 amountForPrizePool = amountPerDay * 50 / 100;
+
+        IERC20(MOONBEAM_USDC_ADDR).transfer(TREASURY_ADDR, amountForTreasury);
+        IERC20(MOONBEAM_USDC_ADDR).transfer(PRIZE_POOL_ADDR, amountForPrizePool);
+    }
+
+    function withdrawAtEndOfChallenge(address user, uint256 challengeID) external onlyChallengeInitiator(user) onlyOwner {
+        UserChallenge storage userChallenge = userChallenges[user][challengeID];
+        require(userChallenge.challengeAccepted, "Challenge not found");
+
+        if (userChallenge.currentStreak == 21) {
+            // If challenge is completed, transfer the full amount paid back to the user
+            IERC20(MOONBEAM_USDC_ADDR).transfer(user, userChallenge.amountPaid);
+        } else {
+            // Calculate the amount owed based on the completed days and paymentPerDay
+            uint256 daysCompleted = userChallenge.currentStreak;
+            uint256 amountOwed = daysCompleted * userChallenge.paymentPerDay;
+
+            // Transfer the amount owed to the user
+            IERC20(MOONBEAM_USDC_ADDR).transfer(user, amountOwed);
+        }
+
+        // Reset the UserChallenge struct
+        delete userChallenges[user][challengeID];
     }
 
     // function sweep(uint256 challengeId) external {
@@ -151,20 +193,9 @@ contract Motivate is Modifiers, Ownable {
 
     /// Withdraw
 
-    function withdrawAtEndOfChallenge(address user, uint256 challengeID) public {
 
-    }
 
-    function adminRecordFailedChallenge(address user, uint256 challengeID) external onlyOwner {
-        UserChallenge memory challenge = userChallenges[user][challengeID];
-        Record memory userRecord = activityRecords[user][challengeID];
-        uint256 today = _whichDay(challenge.startDate);
 
-        if (userRecord.challengeDays[today] == true) revert UserAlreadyRecordedChallenge();
-        /// Split paymentPerDay into 2. Half to treasury and half to prizePool
-        IERC20(MOONBEAM_USDC_ADDR).transfer(TREASURY_ADDR, challenge.paymentPerDay * 50 / 100);
-        IERC20(MOONBEAM_USDC_ADDR).transfer(PRIZE_POOL_ADDR, challenge.paymentPerDay * 50 / 100);
-    }
 
     function setMonthEnd(uint256 stamp) external onlyOwner {
         require(stamp > block.timestamp, "Month end must be greater than current timestamp");
@@ -183,39 +214,17 @@ contract Motivate is Modifiers, Ownable {
         return uint256(keccak256(abi.encodePacked(activityId, startDate, amount)));
     }
 
+    // Modified this so that it should return the day of the challenge, a value between 0 and 20 (inclusive)
     function _whichDay(uint256 _startTimestamp) internal view returns (uint8) {
-        uint256 day = (block.timestamp % _startTimestamp) / 1 days;
-        return uint8(day);
+        uint256 elapsedTime = block.timestamp - _startTimestamp;
+        uint256 numberOfDays = elapsedTime / 1 days;
+        return uint8(numberOfDays % 21);
     }
 
-    function setRecord(address _user, uint256 _challengeId, uint8 _n) internal returns (bool) {
-        require(_n < 21, "Index out of bounds"); // ensure n is within 0 to 20
-
-        Record storage userRecord = activityRecords[_user][_challengeId];
-        if (userRecord.challengeDays[_n] == false) {
-            userRecord.challengeDays[_n] = true;
-            return true;
-        } else {
-            return false;
-        }
+    function getEligibileParticipants() external view returns (address payable[] memory) {
+      return s_eligibleParticipants;
     }
-
-    /**
-     * @notice function to check if all bools are true
-     * @dev May need to change the implementation of this function as it's not compiling
-     */
-    function allBoolsTrue(address _user, uint256 _challengeId) internal view returns (bool) {
-        Record storage record = activityRecords[_user][_challengeId];
-        bool hasFailedDay = false;
-
-        // if all 21 bools are true, then record.bitMask should be 0x1FFFFF (2^21 - 1)
-        for (uint256 i = 0; i < record.challengeDays.length; i++) {
-            if (record.challengeDays[i] == false) {
-                hasFailedDay = true;
-            }
-        }
-        return hasFailedDay;
+    function getWinners() external view returns (address payable[] memory) {
+      return s_winners;
     }
-
-    function getUserCount() internal view { }
 }

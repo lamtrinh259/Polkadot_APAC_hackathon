@@ -34,4 +34,12 @@ abstract contract Modifiers {
         }
         _;
     }
+
+    modifier onlyChallengeInitiator(address user) {
+        require(
+            msg.sender == user,
+            "Unauthorized: Only challenge initiator or owner can call this function"
+        );
+        _;
+    }
 }
